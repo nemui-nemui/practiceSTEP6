@@ -1,0 +1,73 @@
+h1 {
+    width: 845px ;
+    margin: 0 auto;
+    line-height:100px;
+}
+
+.container {
+    max-width: 1100px;
+    margin: 0 auto;
+}
+
+.form-container {
+    padding-bottom: 15px;
+}
+
+.form-container , .flex-fill {
+    margin-right: 1.5rem; 
+}
+
+.form-container , .flex-fill:last-child {
+    margin-right: 0; 
+}
+
+.btn-outline-primary {
+    color: black;
+    border-color: #ced4da;;
+}
+
+thead,tbody {
+    border: 1px solid;
+}
+
+.table thead tr , .table tbody tr {
+    vertical-align: middle;
+    height: 60px; 
+}
+
+.touroku {
+    color: black;
+    border: 1px solid gray ;
+    border-radius: 3px;
+    background-color: rgb(255, 123, 0);
+    padding: 5px 12px;
+    margin-left: 20px;
+}
+
+.syousai , .sakujyo {
+    border: 1px solid gray ;
+    border-radius: 3px;
+    padding: 3px 12px;
+}
+
+.syousai {
+    color:black;
+    background-color: rgb(0, 183, 255);
+}
+
+.sakujyo {
+    color: white ;
+    background-color: red;
+}
+
+.pagination {
+    padding-top: 15px;
+}
+
+.pagination a {
+    color: black;
+}
+
+.text-muted {
+    display: none;
+}

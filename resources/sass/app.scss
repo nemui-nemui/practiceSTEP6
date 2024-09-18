@@ -1,0 +1,28 @@
+// Fonts
+@import url('https://fonts.bunny.net/css?family=Nunito');
+
+// Variables
+@import 'variables';
+    
+// Bootstrap
+@import 'bootstrap/scss/bootstrap';
+
+.register-button {
+    color: black;
+    border: 1px solid gray ;
+    border-radius: 50px;
+    background-color: rgb(255, 123, 0);
+}
+
+.login-button , .modoru {
+    color:black;
+    border: 1px solid gray ;
+    background-color: rgb(0, 183, 255);
+    border-radius: 50px;
+    margin-left: 105px;
+
+}
+
+.modoru{
+    padding: 5px 25px ;
+}
