@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Product;
 use App\Models\Company;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class ProductController extends Controller
 {
@@ -69,14 +70,17 @@ class ProductController extends Controller
             'new_company' => 'nullable|required_without:company|string|max:255'
         ]);
 
-        if ($request->input('company') === 'new') {
+        DB::beginTransaction();
+
+        try{
+            if ($request->input('company') === 'new') {
                 if ($request->input('new_company')) {
                     $newCompany = new Company();
                     $newCompany->company_name = $request->input('new_company');
                     $newCompany->save(); // 新しいメーカーを保存
             
                     // 新しく登録したメーカーのIDを使う
-                    $companyId = $newCompany->id;
+                    $companyId = $newCompany->id;                   
                 } else {
                     // 既存のメーカーIDを使用
                     return redirect()->back()->withErrors(['new_company' => '入力してください']);
@@ -87,24 +91,31 @@ class ProductController extends Controller
                 $companyId = $request->input('company');
             }
 
-        $product = new Product;
-        $product->product_name = $request->input(["productName"]);
-        $product->company_id = $companyId;
-        $product->price = $request->input(['price']);
-        $product->stock = $request->input(['stock']);
-        $product->comment = $request->input(['comment']);
+            $product = new Product;
+            $product->product_name = $request->input(["productName"]);
+            $product->company_id = $companyId;
+            $product->price = $request->input(['price']);
+            $product->stock = $request->input(['stock']);
+            $product->comment = $request->input(['comment']);
 
-        if ($request->hasFile('image')) {
-            $image = $request->file('image');
-            $imageName = time() . '.' . $image->getClientOriginalExtension();
-            $image->move(public_path('images'), $imageName); // imagesフォルダに保存
-            $product->img_path = 'images/' . $imageName; // 画像パスをデータベースに保存
+            if ($request->hasFile('image')) {
+                $image = $request->file('image');
+                $imageName = time() . '.' . $image->getClientOriginalExtension();
+                $image->move(public_path('images'), $imageName); // imagesフォルダに保存
+                $product->img_path = 'images/' . $imageName; // 画像パスをデータベースに保存
+            }
+
+            $product->save();
+
+            DB::commit();
+
+            return redirect()->route('products.index');  //
+        } catch (\Exception $e) {
+            DB::rollback();
+            return back();
         }
-
-        $product->save();
-
-        return redirect()->route('products.index');  //
     }
+
 
     /**
      * Display the specified resource.
@@ -152,21 +163,31 @@ class ProductController extends Controller
             'stock' => 'required|integer|regex:/^[0-9]+$/',
         ]);
 
-        $product->product_name = $request->input(["productName"]);
-        $product->company_id = $request->input(['company']);
-        $product->price = $request->input(['price']);
-        $product->stock = $request->input(['stock']);
-        
-        if ($request->hasFile('image')) {
-            $image = $request->file('image');
-            $imageName = time() . '.' . $image->getClientOriginalExtension();
-            $image->move(public_path('images'), $imageName);
-            $product->img_path = 'images/' . $imageName;
+        DB::beginTransaction();
+        try {
+
+            $product->product_name = $request->input(["productName"]);
+            $product->company_id = $request->input(['company']);
+            $product->price = $request->input(['price']);
+            $product->stock = $request->input(['stock']);
+            
+            if ($request->hasFile('image')) {
+                $image = $request->file('image');
+                $imageName = time() . '.' . $image->getClientOriginalExtension();
+                $image->move(public_path('images'), $imageName);
+                $product->img_path = 'images/' . $imageName;
+            }
+
+            $product->save();
+
+            DB::commit();
+
+            return redirect()->route('products.edit', ['id' => $product->id]);
+
+        } catch (\Exception $e) {
+            DB::rollback();
+            return back();
         }
-
-        $product->save();
-
-        return redirect()->route('products.edit', ['id' => $product->id]);
     }
 
     /**
@@ -177,8 +198,17 @@ class ProductController extends Controller
      */
     public function destroy($id)
     {
-        Product::destroy($id);
-        return redirect()->route('products.index');
-        //
+
+        DB::beginTransaction();
+
+        try{
+            Product::destroy($id);
+            DB::commit();
+            return redirect()->route('products.index');
+
+        } catch (\Exception $e) {
+            DB::rollback();
+            return back();
+        }
     }
 }
