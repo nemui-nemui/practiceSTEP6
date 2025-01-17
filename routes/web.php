@@ -28,7 +28,6 @@ Auth::routes();
 Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
 
 Route::get('/products', [App\Http\Controllers\ProductController::class, 'index'])->name('products.index');
-Route::get('/', [App\Http\Controllers\ProductController::class, 'index'])->name('products.index');
 
 Route::get('/products/create', [App\Http\Controllers\ProductController::class, 'create'])->name('products.create');
 Route::post('/products', [App\Http\Controllers\ProductController::class, 'store'])->name('products.store');
@@ -38,4 +37,4 @@ Route::get('/products/{id}', [App\Http\Controllers\ProductController::class, 'sh
 Route::get('/products/edit/{id}', [App\Http\Controllers\ProductController::class, 'edit'])->name('products.edit');
 Route::put('/products/{id}', [App\Http\Controllers\ProductController::class, 'update'])->name('products.update');
 
-Route::post('/products/{id}', [App\Http\Controllers\ProductController::class, 'destroy'])->name('products.destroy');
+Route::delete('/products/{id}', [App\Http\Controllers\ProductController::class, 'destroy'])->name('products.destroy');

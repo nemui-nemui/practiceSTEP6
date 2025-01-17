@@ -17,10 +17,28 @@ class ProductController extends Controller
     public function index(Request $request)
     {
 
+        \Log::info('ソートパラメータ:', [
+            'sort' => $request->input('sort'),
+            'direction' => $request->input('direction')
+        ]);
+
+        DB::listen(function ($query) {
+            \Log::info($query->sql);
+            \Log::info($query->bindings); // バインドされているパラメータも確認
+        });
+        
+
+        $minPrice = Product::min('price');
+        $maxPrice = Product::max('price');
+        $minStock = Product::min('stock');
+        $maxStock = Product::max('stock');
+
         $keyword = $request->input('keyword');
         $company_id = $request->input('company_id');
+        $price = $request->input('price');
+        $stock = $request->input('stock');
 
-        $query = Product::query();
+        $query = Product::with('company');
 
         if(!empty($keyword)) {
             $query->where('product_name', 'LIKE', "%{$keyword}%");
@@ -30,11 +48,38 @@ class ProductController extends Controller
             $query->where('company_id', $company_id);
         }
 
-        $products = $query->with('company')->latest() -> paginate(5);
+        if (!empty($price)) {
+            $query->where('price', '<=', $price);
+        }
+        
+        if (!empty($stock)) {
+            $query->where('stock', '<=', $stock);
+        }
+
+        $sort = $request->input('sort', 'id');
+        $direction = $request->input('direction', 'asc');
+
+        $products = $query->join('companies', 'products.company_id', '=', 'companies.id')
+                            ->select('products.*', 'companies.company_name')
+                            ->orderBy($sort === 'company_name' ? 'companies.company_name' : 'products.' . $sort, $direction)
+                            // ->sortable(['company_name'])
+                            ->sortable() // すべてのソート可能カラムに対応
+                            ->paginate(5)
+                            ->appends(['sort' => $sort, 'direction' => $direction]);
 
         $companies = Product::with('company')->get()->pluck('company')->unique('id');
 
-        return view('list' , compact('products' , 'companies' , 'keyword'))
+        if ($request->ajax()) {
+            return response()->json([
+                'products' => $products,
+                'companies' => $companies,
+                'keyword' => $keyword,
+                'page_id' => $request->input('page', 1),
+                'i' => ($request->input('page', 1) - 1) * 5,
+            ]);
+        }
+
+        return view('list' , compact('products' , 'companies' , 'keyword' , 'minPrice', 'maxPrice', 'minStock', 'maxStock'))
             ->with('page_id',request()->page)
             ->with('i' , (request()->input('page' , 1) - 1) * 5);
         //
@@ -198,6 +243,10 @@ class ProductController extends Controller
      */
     public function destroy($id)
     {
+        $product = Product::findOrFail($id);
+        $product->delete();
+
+        return response()->json(['message' => 'Product deleted successfully']);
 
         DB::beginTransaction();
 
