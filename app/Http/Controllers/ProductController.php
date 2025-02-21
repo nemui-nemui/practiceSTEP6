@@ -17,15 +17,12 @@ class ProductController extends Controller
     public function index(Request $request)
     {
 
-        \Log::info('ソートパラメータ:', [
-            'sort' => $request->input('sort'),
-            'direction' => $request->input('direction')
-        ]);
+        \Log::info('リクエストパラメータ:', $request->all());
 
-        DB::listen(function ($query) {
-            \Log::info($query->sql);
-            \Log::info($query->bindings); // バインドされているパラメータも確認
-        });
+        // DB::listen(function ($query) {
+        //     \Log::info($query->sql);
+        //     \Log::info($query->bindings); // バインドされているパラメータも確認
+        // });
         
 
         $minPrice = Product::min('price');
@@ -38,6 +35,8 @@ class ProductController extends Controller
         $price = $request->input('price');
         $stock = $request->input('stock');
 
+        $sort = $request->input('sort', 'id');
+        $direction = $request->input('direction', 'asc'); //$directionは、リストの並び順（昇順・降順）を指定するﾊﾟﾗﾒｰﾀ
         $query = Product::with('company');
 
         if(!empty($keyword)) {
@@ -49,23 +48,24 @@ class ProductController extends Controller
         }
 
         if (!empty($price)) {
-            $query->where('price', '<=', $price);
+            $query->where('price', '>=', $price);
         }
         
         if (!empty($stock)) {
-            $query->where('stock', '<=', $stock);
+            $query->where('stock', '>=', $stock);
         }
 
-        $sort = $request->input('sort', 'id');
-        $direction = $request->input('direction', 'asc');
+        \Log::info('クエリSQL:', [$query->toSql()]);
+        \Log::info('クエリパラメータ:', $query->getBindings());
 
         $products = $query->join('companies', 'products.company_id', '=', 'companies.id')
                             ->select('products.*', 'companies.company_name')
                             ->orderBy($sort === 'company_name' ? 'companies.company_name' : 'products.' . $sort, $direction)
                             // ->sortable(['company_name'])
-                            ->sortable() // すべてのソート可能カラムに対応
-                            ->paginate(5)
-                            ->appends(['sort' => $sort, 'direction' => $direction]);
+                            // ->sortable() // すべてのソート可能カラムに対応
+                            ->paginate(5)->appends($request->query());
+        
+        \Log::info('ページネーション結果:', $products->toArray());
 
         $companies = Product::with('company')->get()->pluck('company')->unique('id');
 
